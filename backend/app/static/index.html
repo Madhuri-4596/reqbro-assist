@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ReqBro Assist</title>
+<style>
+  :root {
+    --bg: #0A0A0C;
+    --surface: #151517;
+    --surface-alt: #1E1E22;
+    --border: #2C2C31;
+    --text: #F2F2F4;
+    --text-secondary: #8E8E96;
+    --green: #3DAE7A;
+    --amber: #D79A4A;
+    --crimson: #D65C5F;
+    --cyan: #5A96C9;
+    --violet: #9884D6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { margin-bottom: 24px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  label { display: block; font-size: 12px; color: var(--text-secondary); margin: 10px 0 4px; }
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px;
+    font-size: 13px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .example-btn {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .example-btn:hover { border-color: var(--green); color: var(--green); }
+  button.submit {
+    margin-top: 16px;
+    width: 100%;
+    background: var(--green);
+    color: #0A0A0C;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.submit:disabled { opacity: 0.5; cursor: default; }
+  .timing { display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); margin-top: 10px; font-family: monospace; }
+  .timing b { color: var(--cyan); }
+  .result-title { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin: 14px 0 4px; }
+  .result-title:first-child { margin-top: 0; }
+  .list li { margin-bottom: 4px; font-size: 13px; }
+  .source {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .source .id { color: var(--cyan); font-family: monospace; font-weight: 600; }
+  .source .score { color: var(--amber); float: right; font-family: monospace; }
+  .banner { border-radius: 8px; padding: 12px; font-size: 13px; margin-bottom: 12px; }
+  .banner.error { background: rgba(214,92,95,0.12); border: 1px solid rgba(214,92,95,0.4); color: var(--crimson); }
+  .banner.info { background: rgba(215,154,74,0.12); border: 1px solid rgba(215,154,74,0.4); color: var(--amber); }
+  code { font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ReqBro Assist</h1>
+    <div class="subtitle">Paste a failed API request. Get the likely cause, a suggested fix, and the docs it's based on — with real retrieval + AI latency shown.</div>
+  </header>
+
+  <div class="card">
+    <div class="result-title">Try a ready-made example</div>
+    <div class="examples" id="examples"></div>
+
+    <label>Method</label>
+    <select id="method">
+      <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option>
+    </select>
+
+    <label>Endpoint</label>
+    <input id="endpoint" placeholder="https://api.example.com/v1/orders" />
+
+    <div class="row">
+      <div>
+        <label>Status code</label>
+        <input id="status_code" placeholder="401" />
+      </div>
+    </div>
+
+    <label>Error message</label>
+    <textarea id="error_message" placeholder="e.g. { &quot;error&quot;: &quot;invalid_token&quot; }"></textarea>
+
+    <label>Request body (optional)</label>
+    <textarea id="request_body"></textarea>
+
+    <label>Response body (optional)</label>
+    <textarea id="response_body"></textarea>
+
+    <button class="submit" id="submit">Debug this</button>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script src="examples.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
