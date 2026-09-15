@@ -97,10 +97,11 @@ function render(data) {
       html += `<div class="source ${s.cited ? "cited" : ""}">
         <div class="source-head">
           <span class="id">${esc(s.id)}</span>
-          ${s.cited ? '<span class="cited-tag">cited</span>' : ""}
+          ${s.cited ? '<span class="cited-tag">model cited</span>' : ""}
           <span class="score">relevance ${s.score.toFixed(2)}</span>
         </div>
         <div class="snippet">${esc(s.snippet)}...</div>
+        ${s.trusted && s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">Read curated source notes</a>` : "<small>Unverified retrieved text - excluded from the model</small>"}
       </div>`;
     });
   }

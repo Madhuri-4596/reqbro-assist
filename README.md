@@ -7,14 +7,15 @@ was based on — with real retrieval and AI latency shown.
 
 Built for the [YC Fall 2026 x Moss: The Zero Latency Builder Sprint](https://yc-fall-2026-x-moss.devpost.com/).
 
-This is a separate project from [ReqBro](../ReqBro) (the Android API client) — it
+This is a separate project from ReqBro (the Android API client) — it
 reuses the idea of AI-assisted request debugging, rewritten as a standalone web
 service so judges can access it without installing an app.
 
 ## How it works
 
 1. Sensitive fields (Authorization headers, API keys, passwords, tokens) are
-   stripped from pasted text server-side before anything else happens.
+   redacted on a best-effort basis from the endpoint and pasted text before provider calls.
+   Use synthetic examples: this does not remove all possible private data.
 2. The redacted error details are used to query a [Moss](https://docs.moss.dev/)
    index of curated API-troubleshooting documentation (semantic search, no
    traditional vector database).
@@ -29,10 +30,10 @@ service so judges can access it without installing an app.
 
 ### 1. Accounts you need
 
-- A [Moss](https://moss.dev) account — free tier ($5/month credit) is enough for
-  this demo's dataset size (~20 documents).
+- A [Moss](https://moss.dev) project with access to the SDK and index. Check your account
+  for current quotas and charges; no tier or credit balance is assumed.
 - An [OpenAI](https://platform.openai.com) account with billing enabled (this app
-  uses `gpt-4o-mini`, which costs fractions of a cent per request).
+  uses `gpt-4o-mini`; check current account pricing and set a usage budget).
 
 ### 2. Install
 
@@ -68,7 +69,7 @@ this."
 
 ## Deployment
 
-Deployed on [Railway](https://railway.app):
+To deploy on [Railway](https://railway.app) (deployment not yet verified):
 
 1. Push this repo to GitHub.
 2. Create a new Railway project from the GitHub repo, root directory `backend`.
@@ -101,14 +102,32 @@ Covers five error categories with curated documentation and ready-to-run example
 500 (server error). When the pasted details are too sparse for a confident
 diagnosis, the assistant asks a clarifying question instead of guessing.
 
-## Testing performed
+## Verification and limitations
 
-- Correct-answer cases for each of the five status code categories (see example
-  buttons in the UI).
-- Missing-information case (sparse input triggers a clarifying question, not a
-  fabricated diagnosis).
-- Sensitive-data redaction (Authorization headers, API keys, passwords, bearer
-  tokens stripped before reaching Moss or the LLM — verified by inspecting the
-  redacted text server-side).
-- Service failure states (Moss or OpenAI unavailable/misconfigured surfaces an
-  honest error message in the UI, not a silent failure or fabricated result).
+Run the credential-free regression suite from `backend`:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+17 tests cover credential formats, endpoint redaction before both providers,
+validation limits, forged retrieved text, sparse/no-match inputs, source links,
+conflicting abstentions, invalid model JSON and sanitized provider errors.
+Provider requests are mocked: passing tests do not establish live retrieval,
+model quality, injection-proof behavior or actual latency. Real credentials,
+index seeding and an end-to-end deployment test are still required.
+
+The server requires an error/response signal matching a curated pattern before
+asking the model for a diagnosis. It excludes changed or unknown retrieved text
+from model input, checks the output schema and citation IDs, and suppresses answers
+without supporting citations. This conservative gate may abstain on valid cases;
+matched keywords do not prove causality or defeat every prompt injection.
+All retrieved notes remain visible. A "model cited" badge records the model's
+reference, not independent verification of every claim. Source links point to
+this repository's authored notes, not external API-provider documentation.
+
+No user-requested endpoint is fetched and no suggested fix is executed. The
+application does not intentionally persist request bodies. Hosting logs and
+provider retention are separate; redaction cannot guarantee removal of arbitrary
+personal information. `/api/health` is process liveness, not proof that providers
+are ready. An AI timing of 0 means the evidence gate skipped the model.

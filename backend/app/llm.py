@@ -7,6 +7,8 @@ import os
 import time
 
 import httpx
+from pydantic import ValidationError
+from .models import Explanation
 
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4o-mini"
@@ -60,7 +62,7 @@ async def explain(
 ) -> tuple[dict, float]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise LlmError("OPENAI_API_KEY is not configured on the server.")
+        raise LlmError("The explanation service is not configured yet.")
 
     docs_block = "\n\n".join(
         f"[id: {d['id']}] (category {d['category']}, relevance {d['score']:.2f})\n{d['text']}"
@@ -89,25 +91,29 @@ Retrieved documentation:
     }
 
     start = time.perf_counter()
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            OPENAI_URL,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-        )
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                OPENAI_URL,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=payload,
+            )
+    except httpx.HTTPError as e:
+        raise LlmError("The explanation service is temporarily unavailable. Please try again.") from e
     ai_ms = (time.perf_counter() - start) * 1000
 
     if resp.status_code != 200:
-        raise LlmError(f"OpenAI returned {resp.status_code}: {resp.text[:500]}")
+        raise LlmError("The explanation service could not complete the request. Please try again later.")
 
-    data = resp.json()
     try:
+        data = resp.json()
         content = data["choices"][0]["message"]["content"]
-        parsed = json.loads(content)
-    except (KeyError, IndexError, json.JSONDecodeError) as e:
-        raise LlmError(f"Could not parse OpenAI response: {e}") from e
+        parsed = Explanation.model_validate(json.loads(content)).model_dump()
+    except (KeyError, IndexError, TypeError, ValueError, ValidationError) as e:
+        raise LlmError("The explanation service returned an unusable answer. Please try again.") from e
 
+    allowed = {d['id'] for d in retrieved_docs}
+    if (not set(parsed['source_ids']).issubset(allowed)
+            or (parsed['needs_more_info'] and parsed['insufficient_evidence'])):
+        raise LlmError("The explanation service returned an unsupported answer. Please try again.")
     return parsed, ai_ms

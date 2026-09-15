@@ -152,3 +152,28 @@ until this section is updated with actual data.
   with no setup or account required on their end.
 - Every claim made in the UI (data retention, "not a mock", etc.) matches
   what the deployed code actually does at demo time.
+
+
+## September 15 hardening update
+
+Endpoint URLs now pass through the same best-effort redaction as error and body
+fields. Coverage includes common URL/form credentials, indented headers and
+nested JSON secrets; it is not a guarantee for arbitrary sensitive text.
+
+The implemented flow is redaction -> Moss retrieval -> deterministic evidence
+gate -> optional model call -> strict schema/citation validation -> result.
+The gate requires an explicit error/response signal and an unchanged note from
+the checked-in corpus. Sparse inputs, no matches, changed retrieved notes and
+uncited answers produce conservative states rather than a specific diagnosis.
+These controls reduce risk; they do not establish universal prompt-injection
+resistance or independently prove that model prose is correct.
+
+All retrieved notes remain visible with trust/citation labels. Links identify
+the repository's curated notes honestly. Provider exceptions are not displayed
+verbatim. Request field lengths and method/status values are bounded.
+
+The credential-free regression suite passes 17 tests using provider mocks.
+Real provider performance and deployed operation remain unmeasured. The original
+example-case checks should not be interpreted as live model or Moss validation.
+The UI discloses application behavior separately from hosting/provider policies;
+no blanket claim that data is never retained anywhere is made.

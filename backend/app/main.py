@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -13,7 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from . import moss_client
 from .llm import LlmError, explain
 from .models import DebugRequest, DebugResponse, Source
-from .redact import redact_all
+from .redact import redact_all, redact
+from .evidence import matching_docs, trusted_docs, fallback, SOURCE_URL
 
 
 @asynccontextmanager
@@ -24,7 +26,7 @@ async def lifespan(app: FastAPI):
     try:
         await moss_client.get_client().load_index(moss_client.INDEX_NAME)
     except Exception as e:
-        print(f"WARNING: could not load Moss index at startup: {e}")
+        print("WARNING: Moss index is unavailable; check server configuration.")
     yield
 
 
@@ -37,7 +39,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
         status_code=422,
         content={
             "detail": {
-                "error": "Endpoint and status code are required and can't be blank.",
+                "error": "Check the method, endpoint, error status (400-599), and input length limits.",
                 "stage": "validation",
             }
         },
@@ -53,48 +55,56 @@ async def health():
 async def debug(req: DebugRequest):
     total_start = time.perf_counter()
 
-    error_message, request_body, response_body = redact_all(
-        req.error_message, req.request_body, req.response_body
+    endpoint, error_message, request_body, response_body = redact_all(
+        req.endpoint, req.error_message, req.request_body, req.response_body
     )
 
-    query_text = f"{req.method} {req.endpoint} returned {req.status_code}. {error_message or ''}".strip()
+    query_text = f"{req.method} {endpoint} returned {req.status_code}. {error_message or ''}".strip()
 
     try:
         docs, retrieval_ms = await moss_client.search(query_text, top_k=5)
     except Exception as e:
         raise HTTPException(
             status_code=502,
-            detail={"error": f"Moss retrieval failed: {e}", "stage": "retrieval"},
+            detail={"error": "Documentation search is temporarily unavailable. Please try again later.", "stage": "retrieval"},
         ) from e
 
-    try:
-        result, ai_ms = await explain(
-            method=req.method,
-            endpoint=req.endpoint,
-            status_code=req.status_code,
-            error_message=error_message,
-            request_body=request_body,
-            response_body=response_body,
-            retrieved_docs=docs,
-        )
-    except LlmError as e:
-        raise HTTPException(
-            status_code=502,
-            detail={"error": str(e), "stage": "ai"},
-        ) from e
+    usable = matching_docs(docs, req.status_code, error_message, response_body)
+    sparse = not (error_message or '').strip() and not (response_body or '').strip()
+    ai_ms = 0.0
+    if sparse or not usable:
+        result = fallback(sparse)
+    else:
+        try:
+            result, ai_ms = await explain(
+                method=req.method, endpoint=endpoint, status_code=req.status_code,
+                error_message=error_message, request_body=request_body,
+                response_body=response_body, retrieved_docs=usable,
+            )
+        except LlmError as e:
+            raise HTTPException(status_code=502, detail={
+                "error": "The explanation service could not produce a usable answer. Please try again later.",
+                "stage": "ai"}) from e
+        # Missing citations or an abstention cannot coexist with a displayed diagnosis.
+        if (not result.get('source_ids') or result.get('needs_more_info')
+                or result.get('insufficient_evidence')):
+            result = fallback(bool(result.get('needs_more_info')))
 
     total_ms = (time.perf_counter() - total_start) * 1000
 
     # Always show what was actually retrieved and considered, whether or not the model
-    # cited it - "cited" tells the truth about whether it genuinely supported the answer,
+    # cited it - "cited" records the model's references, not an independent proof of support,
     # rather than silently hiding low-relevance docs that were still part of retrieval.
     cited_ids = set(result.get("source_ids") or [])
+    trusted_ids = {d["id"] for d in trusted_docs(docs)}
     sources = [
         Source(
             id=d["id"],
             category=d["category"],
             score=d["score"],
-            snippet=d["text"][:220],
+            snippet=redact(d["text"])[:220],
+            url=SOURCE_URL if d["id"] in trusted_ids else None,
+            trusted=d["id"] in trusted_ids,
             cited=d["id"] in cited_ids,
         )
         for d in docs
@@ -117,4 +127,4 @@ async def debug(req: DebugRequest):
 
 
 # Serve the frontend as static files - one deployable service, one URL for judges.
-app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+app.mount("/", StaticFiles(directory=Path(__file__).parent / "static", html=True), name="static")

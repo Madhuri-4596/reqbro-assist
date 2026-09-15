@@ -82,7 +82,7 @@ process.
 | `app/moss_client.py` | Wraps the Moss SDK; isolates retrieval timing from the rest of the request |
 | `app/llm.py` | Builds the explanation prompt, calls OpenAI, isolates AI timing, parses the structured JSON result |
 | `app/models.py` | Request/response schemas (Pydantic) — also where input validation lives (blank endpoint/status rejected) |
-| `app/data/docs.py` | The curated 20-document knowledge base, source of truth for what gets indexed |
+| `app/data/docs.py` | The curated 19-document knowledge base, source of truth for what gets indexed |
 | `scripts/seed_index.py` | One-time script to create/populate the Moss index from `docs.py` |
 
 ## Deployment topology
@@ -90,3 +90,28 @@ process.
 One deployable service (FastAPI, serving both the API and the static
 frontend from the same origin) on Railway. No separate frontend hosting,
 no CORS configuration needed, one URL for judges to visit.
+
+
+## September 15 hardening update
+
+Endpoint URLs now pass through the same best-effort redaction as error and body
+fields. Coverage includes common URL/form credentials, indented headers and
+nested JSON secrets; it is not a guarantee for arbitrary sensitive text.
+
+The implemented flow is redaction -> Moss retrieval -> deterministic evidence
+gate -> optional model call -> strict schema/citation validation -> result.
+The gate requires an explicit error/response signal and an unchanged note from
+the checked-in corpus. Sparse inputs, no matches, changed retrieved notes and
+uncited answers produce conservative states rather than a specific diagnosis.
+These controls reduce risk; they do not establish universal prompt-injection
+resistance or independently prove that model prose is correct.
+
+All retrieved notes remain visible with trust/citation labels. Links identify
+the repository's curated notes honestly. Provider exceptions are not displayed
+verbatim. Request field lengths and method/status values are bounded.
+
+The credential-free regression suite passes 17 tests using provider mocks.
+Real provider performance and deployed operation remain unmeasured. The original
+example-case checks should not be interpreted as live model or Moss validation.
+The UI discloses application behavior separately from hosting/provider policies;
+no blanket claim that data is never retained anywhere is made.
