@@ -47,13 +47,19 @@ const EXAMPLES = [
   },
 ];
 
+const STATUS_COLORS = {
+  "400": "#D79A4A", "401": "#E06569", "403": "#E06569",
+  "422": "#D79A4A", "429": "#9884D6", "500": "#E06569",
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("examples");
   EXAMPLES.forEach((ex) => {
+    const color = STATUS_COLORS[ex.status_code] || "#5A96C9";
     const btn = document.createElement("button");
     btn.className = "example-btn";
     btn.type = "button";
-    btn.textContent = ex.label;
+    btn.innerHTML = `<span class="code-chip" style="color:${color};background:${color}22">${ex.status_code}</span>${ex.label.replace(/^\d+\s*·\s*/, "")}`;
     btn.onclick = () => {
       document.getElementById("method").value = ex.method;
       document.getElementById("endpoint").value = ex.endpoint;
@@ -61,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("error_message").value = ex.error_message;
       document.getElementById("request_body").value = ex.request_body;
       document.getElementById("response_body").value = ex.response_body;
+      document.getElementById("endpoint").scrollIntoView({ behavior: "smooth", block: "center" });
     };
     container.appendChild(btn);
   });

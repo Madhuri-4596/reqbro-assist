@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import moss_client
@@ -27,6 +29,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="ReqBro Assist", lifespan=lifespan)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "error": "Endpoint and status code are required and can't be blank.",
+                "stage": "validation",
+            }
+        },
+    )
 
 
 @app.get("/api/health")
@@ -70,14 +85,19 @@ async def debug(req: DebugRequest):
 
     total_ms = (time.perf_counter() - total_start) * 1000
 
-    source_ids = set(result.get("source_ids") or [])
+    # Always show what was actually retrieved and considered, whether or not the model
+    # cited it - "cited" tells the truth about whether it genuinely supported the answer,
+    # rather than silently hiding low-relevance docs that were still part of retrieval.
+    cited_ids = set(result.get("source_ids") or [])
     sources = [
-        Source(id=d["id"], category=d["category"], score=d["score"], snippet=d["text"][:220])
+        Source(
+            id=d["id"],
+            category=d["category"],
+            score=d["score"],
+            snippet=d["text"][:220],
+            cited=d["id"] in cited_ids,
+        )
         for d in docs
-        if d["id"] in source_ids
-    ] or [
-        Source(id=d["id"], category=d["category"], score=d["score"], snippet=d["text"][:220])
-        for d in docs[:3]
     ]
 
     return DebugResponse(
@@ -86,11 +106,13 @@ async def debug(req: DebugRequest):
         what_to_check=result.get("what_to_check", []),
         suggested_fix=result.get("suggested_fix", ""),
         needs_more_info=result.get("needs_more_info", False),
+        insufficient_evidence=result.get("insufficient_evidence", False),
         clarifying_question=result.get("clarifying_question"),
         sources=sources,
         retrieval_ms=round(retrieval_ms, 1),
         ai_ms=round(ai_ms, 1),
         total_ms=round(total_ms, 1),
+        data_retained=False,
     )
 
 

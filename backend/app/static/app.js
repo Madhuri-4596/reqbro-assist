@@ -17,14 +17,16 @@ submitBtn.addEventListener("click", async () => {
     response_body: document.getElementById("response_body").value || null,
   };
 
-  if (!body.endpoint || !body.status_code) {
-    resultEl.innerHTML = `<div class="banner error">Endpoint and status code are required.</div>`;
+  if (!body.endpoint.trim() || !body.status_code.trim()) {
+    resultEl.innerHTML = `<div class="card"><div class="banner error"><b>Endpoint and status code are required</b> — fill those in, or click one of the example buttons above.</div></div>`;
+    resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Debugging...";
-  resultEl.innerHTML = "";
+  resultEl.innerHTML = `<div class="card"><div class="loading-row"><span class="spinner"></span> Searching documentation and generating an explanation...</div></div>`;
+  resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
   try {
     const res = await fetch("/api/debug", {
@@ -35,13 +37,15 @@ submitBtn.addEventListener("click", async () => {
 
     if (!res.ok) {
       let detail = "Something went wrong.";
+      let stage = "unknown";
       try {
         const errJson = await res.json();
         detail = errJson.detail?.error || errJson.detail || JSON.stringify(errJson);
+        stage = errJson.detail?.stage || stage;
       } catch (_) {}
       resultEl.innerHTML = `<div class="card"><div class="banner error">
-        <b>Request failed.</b><br/>${esc(detail)}<br/><br/>
-        This is an honest error state, not a fabricated answer — either Moss or the AI model didn't respond successfully.
+        <b>Request failed${stage !== "unknown" ? ` at the ${esc(stage)} stage` : ""}.</b><br/>${esc(detail)}<br/><br/>
+        This is an honest error state, not a fabricated answer — Moss, the AI model, or your input didn't produce a usable result.
       </div></div>`;
       return;
     }
@@ -54,7 +58,7 @@ submitBtn.addEventListener("click", async () => {
     </div></div>`;
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Debug this";
+    submitBtn.textContent = "Debug this request";
   }
 });
 
@@ -63,37 +67,48 @@ function render(data) {
 
   if (data.needs_more_info) {
     html += `<div class="banner info">
-      <b>Not enough information for a confident diagnosis.</b><br/>
+      <b>Not enough information to reason about this.</b><br/>
       ${esc(data.clarifying_question)}
+    </div>`;
+  } else if (data.insufficient_evidence) {
+    html += `<div class="banner neutral">
+      <b>No confident match found.</b> The retrieved documentation doesn't clearly support one specific
+      cause for this case — a status code alone isn't proof of a root cause. See what was considered below.
     </div>`;
   }
 
-  html += `<div class="result-title">What this means</div><div>${esc(data.meaning)}</div>`;
-  html += `<div class="result-title">Likely cause</div><div>${esc(data.likely_cause)}</div>`;
+  if (!data.needs_more_info) {
+    html += `<div class="result-title">What this means</div><div class="result-body">${esc(data.meaning)}</div>`;
+    html += `<div class="result-title">Likely cause</div><div class="result-body">${esc(data.likely_cause)}</div>`;
 
-  if (data.what_to_check?.length) {
-    html += `<div class="result-title">What to check</div><ul class="list">`;
-    data.what_to_check.forEach((c) => (html += `<li>${esc(c)}</li>`));
-    html += `</ul>`;
+    if (data.what_to_check?.length) {
+      html += `<div class="result-title">What to check</div><ul class="list">`;
+      data.what_to_check.forEach((c) => (html += `<li>${esc(c)}</li>`));
+      html += `</ul>`;
+    }
+
+    html += `<div class="result-title">Suggested fix <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">— review before applying, nothing is executed automatically</span></div><div class="result-body">${esc(data.suggested_fix)}</div>`;
   }
 
-  html += `<div class="result-title">Suggested fix (review before applying)</div><div>${esc(data.suggested_fix)}</div>`;
-
   if (data.sources?.length) {
-    html += `<div class="result-title">Sources</div>`;
+    const citedCount = data.sources.filter((s) => s.cited).length;
+    html += `<div class="result-title">${citedCount > 0 ? "Sources" : "Considered (none confidently relevant)"}</div>`;
     data.sources.forEach((s) => {
-      html += `<div class="source">
-        <span class="id">${esc(s.id)}</span>
-        <span class="score">relevance ${s.score.toFixed(2)}</span>
-        <div>${esc(s.snippet)}...</div>
+      html += `<div class="source ${s.cited ? "cited" : ""}">
+        <div class="source-head">
+          <span class="id">${esc(s.id)}</span>
+          ${s.cited ? '<span class="cited-tag">cited</span>' : ""}
+          <span class="score">relevance ${s.score.toFixed(2)}</span>
+        </div>
+        <div class="snippet">${esc(s.snippet)}...</div>
       </div>`;
     });
   }
 
   html += `<div class="timing">
-    <span>Retrieval: <b>${data.retrieval_ms}ms</b></span>
-    <span>AI: <b>${data.ai_ms}ms</b></span>
-    <span>Total: <b>${data.total_ms}ms</b></span>
+    <div class="cell"><div class="label">Retrieval</div><div class="value">${data.retrieval_ms}<span style="font-size:11px">ms</span></div></div>
+    <div class="cell"><div class="label">AI</div><div class="value">${data.ai_ms}<span style="font-size:11px">ms</span></div></div>
+    <div class="cell total"><div class="label">Total</div><div class="value">${data.total_ms}<span style="font-size:11px">ms</span></div></div>
   </div>`;
 
   html += `</div>`;
