@@ -335,7 +335,7 @@
     <textarea id="response_body"></textarea>
 
     <button class="submit" id="submit">Debug this request</button>
-    <div class="retention-note">Nothing submitted here is stored — each request is processed and discarded, secrets are stripped before any model sees them.</div>
+    <div class="retention-note">ReqBro Assist itself stores nothing — no database, no request logs. Secrets are stripped before anything is sent onward. Redacted text is sent to Moss and OpenAI to generate this response, subject to their own data policies (OpenAI retains API inputs for up to 30 days for abuse monitoring by default, not for training).</div>
   </div>
 
   <div id="result"></div>
