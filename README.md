@@ -1,6 +1,6 @@
 # ReqBro Assist
 
-> Live deployment: Railway production service.
+> Live deployment: https://reqbro-assist-production.up.railway.app
 
 An AI debugging assistant for failed API requests. Paste a method, endpoint, status
 code, and error (plus optional request/response bodies) and get: what the error
