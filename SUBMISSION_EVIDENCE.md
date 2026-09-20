@@ -12,7 +12,7 @@ Prepared for the YC Fall 2026 × Moss Zero Latency Builder Sprint.
 
 ## Verified production evidence
 
-Verification date: **September 19, 2026**  
+Verification date: **September 20, 2026**  
 Hosting: **Railway, Southeast Asia**  
 Knowledge base: **19 curated API troubleshooting documents**
 
@@ -26,21 +26,24 @@ Knowledge base: **19 curated API troubleshooting documents**
 
 ### End-to-end retrieval and explanation
 
-A synthetic `401` case with the signal `Authorization header is missing` was
-sent to the public `/api/debug` endpoint. The live response contained:
+A reproducible `GET https://api.github.com/user` failure was captured without
+authentication. Its public `401 Requires authentication` response and the
+observed missing Authorization header were sent to `/api/debug`. The live
+response contained:
 
 | Evidence | Result |
 |---|---:|
 | Moss sources returned | 5 |
 | Trusted sources | 5 |
 | Supporting sources cited | 1 |
-| Moss retrieval | 5.7 ms |
-| OpenAI generation | 2,771.2 ms |
-| End-to-end | 2,777.2 ms |
+| Moss retrieval | 14.0 ms |
+| OpenAI generation | 3,613.9 ms |
+| End-to-end | 3,628.2 ms |
 | Application database retention | false |
 
 This is one verified observation rather than an average or latency guarantee.
-All test input was synthetic and contained no production credentials.
+The captured response is public, and the test contained no credentials or
+private production data.
 
 ## Safety evidence
 

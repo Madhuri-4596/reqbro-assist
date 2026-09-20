@@ -1,13 +1,13 @@
 // Ready-to-run examples so judges can test the demo without typing anything.
 const EXAMPLES = [
   {
-    label: "401 · expired token",
+    label: "401 · GitHub auth missing",
     method: "GET",
-    endpoint: "https://api.example.com/v1/account",
+    endpoint: "https://api.github.com/user",
     status_code: "401",
-    error_message: '{"error":"invalid_token","message":"The access token expired"}',
+    error_message: '{"message":"Requires authentication","documentation_url":"https://docs.github.com/rest"}',
     request_body: "",
-    response_body: "",
+    response_body: "HTTP/1.1 401 Unauthorized. Observed request condition: Authorization header missing.",
   },
   {
     label: "403 · wrong scope",
