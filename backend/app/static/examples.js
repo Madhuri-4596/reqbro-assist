@@ -48,14 +48,14 @@ const EXAMPLES = [
 ];
 
 const STATUS_COLORS = {
-  "400": "#D79A4A", "401": "#E06569", "403": "#E06569",
-  "422": "#D79A4A", "429": "#9884D6", "500": "#E06569",
+  "400": "#FF6B35", "401": "#FF6B35", "403": "#FF6B35",
+  "422": "#FF6B35", "429": "#FF6B35", "500": "#FF6B35",
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("examples");
   EXAMPLES.forEach((ex) => {
-    const color = STATUS_COLORS[ex.status_code] || "#5A96C9";
+    const color = STATUS_COLORS[ex.status_code] || "#FF6B35";
     const btn = document.createElement("button");
     btn.className = "example-btn";
     btn.type = "button";

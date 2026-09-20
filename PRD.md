@@ -49,7 +49,7 @@ ReqBro AgentPay (a separate Arbitrum-based project).
   and inline `Bearer`/`Basic` scheme values or vendor key patterns —
   applied before any text reaches Moss or the LLM.
 - Real-time semantic retrieval via the Moss SDK over a curated,
-  purpose-written knowledge base of 20 documents covering five error
+purpose-written knowledge base of 19 documents covering five error
   categories: **401** (authentication), **403** (permission), **400/422**
   (validation), **429** (rate limiting), **500** (server error).
 - An LLM (OpenAI `gpt-4o-mini`) call that uses *only* the retrieved
@@ -125,22 +125,29 @@ ReqBro AgentPay (a separate Arbitrum-based project).
 
 ## Performance
 
-### Targets (design intent, not yet measured)
+### Targets
 
 - Retrieval: sub-second, ideally well under 100ms given Moss's local
   in-process query model against a small (20-document) index.
 - Total end-to-end response: a few hundred milliseconds to a few seconds,
   dominated by the OpenAI call rather than retrieval.
 
-### Actual measured results
+### Actual measured result
 
-**Pending.** Real numbers require a live Moss project and OpenAI billing,
-neither of which existed at the time this document was written. Once
-deployed, this section will be replaced with real measurements including:
-corpus size (20 documents, fixed), test environment (Railway deployment
-region and instance size), and number of runs averaged. No specific
-latency figure (including "sub-10ms") should be treated as a real result
-until this section is updated with actual data.
+On September 19, 2026, a synthetic `401` request with the explicit signal
+`Authorization header is missing` was sent to the public Railway deployment in
+Southeast Asia. The live response returned five trusted Moss results, cited one
+supporting source, and reported:
+
+| Stage | Observed time |
+|---|---:|
+| Moss retrieval | **5.7 ms** |
+| OpenAI generation | **2,771.2 ms** |
+| End to end | **2,777.2 ms** |
+
+This is a single verified production observation, not an average, percentile or
+performance guarantee. Provider conditions, cold starts and input complexity
+can change later results. The corpus contained 19 curated documents.
 
 ## Success criteria
 
@@ -173,7 +180,8 @@ the repository's curated notes honestly. Provider exceptions are not displayed
 verbatim. Request field lengths and method/status values are bounded.
 
 The credential-free regression suite passes 17 tests using provider mocks.
-Real provider performance and deployed operation remain unmeasured. The original
-example-case checks should not be interpreted as live model or Moss validation.
+The 17-test suite still uses provider mocks, but deployed operation was verified
+separately on September 19 with a live Moss retrieval and OpenAI explanation.
+That single observation should not be presented as a broad performance study.
 The UI discloses application behavior separately from hosting/provider policies;
 no blanket claim that data is never retained anywhere is made.

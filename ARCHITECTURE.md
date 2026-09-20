@@ -16,7 +16,7 @@ flowchart TB
     end
 
     subgraph MossCloud["Moss (usemoss.dev)"]
-        Index["api-troubleshooting index<br/>20 curated documents<br/>401 / 403 / 400+422 / 429 / 500<br/><b>loaded into the FastAPI process<br/>at startup - queries run locally,<br/>not as a cloud round-trip per query</b>"]
+        Index["api-troubleshooting index<br/>19 curated documents<br/>401 / 403 / 400+422 / 429 / 500<br/><b>loaded into the FastAPI process<br/>at startup - queries run locally,<br/>not as a cloud round-trip per query</b>"]
     end
 
     subgraph OpenAICloud["OpenAI API"]
@@ -87,9 +87,10 @@ process.
 
 ## Deployment topology
 
-One deployable service (FastAPI, serving both the API and the static
-frontend from the same origin) on Railway. No separate frontend hosting,
-no CORS configuration needed, one URL for judges to visit.
+One verified deployable service (FastAPI, serving both the API and the static
+frontend from the same origin) on Railway Southeast Asia. No separate frontend
+hosting, no CORS configuration, and one public URL for judges:
+https://reqbro-assist-production.up.railway.app.
 
 
 ## September 15 hardening update
@@ -111,7 +112,8 @@ the repository's curated notes honestly. Provider exceptions are not displayed
 verbatim. Request field lengths and method/status values are bounded.
 
 The credential-free regression suite passes 17 tests using provider mocks.
-Real provider performance and deployed operation remain unmeasured. The original
-example-case checks should not be interpreted as live model or Moss validation.
+The credential-free suite uses provider mocks. Live deployed operation was
+verified separately on September 19, 2026 with a Moss retrieval and OpenAI
+explanation; the observed 5.7 ms retrieval is one run rather than a benchmark.
 The UI discloses application behavior separately from hosting/provider policies;
 no blanket claim that data is never retained anywhere is made.

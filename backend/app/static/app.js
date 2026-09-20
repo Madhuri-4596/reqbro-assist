@@ -24,8 +24,8 @@ submitBtn.addEventListener("click", async () => {
   }
 
   submitBtn.disabled = true;
-  submitBtn.textContent = "Debugging...";
-  resultEl.innerHTML = `<div class="card"><div class="loading-row"><span class="spinner"></span> Searching documentation and generating an explanation...</div></div>`;
+  submitBtn.textContent = "Analyzing evidence...";
+  resultEl.innerHTML = `<div class="loading-card"><div class="section-label">ReqBro is investigating</div><div class="scan"></div><div class="loading-step"><i></i> Redacting sensitive values</div><div class="loading-step"><i></i> Searching the Moss index</div><div class="loading-step"><i></i> Validating evidence and generating an explanation</div></div>`;
   resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
   try {
@@ -58,7 +58,7 @@ submitBtn.addEventListener("click", async () => {
     </div></div>`;
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = "Debug this request";
+    submitBtn.textContent = "Analyze with ReqBro Assist →";
   }
 });
 

@@ -1,6 +1,6 @@
 # ReqBro Assist
 
-> Live deployment: https://reqbro-assist-production.up.railway.app
+> **Live demo:** https://reqbro-assist-production.up.railway.app
 
 An AI debugging assistant for failed API requests. Paste a method, endpoint, status
 code, and error (plus optional request/response bodies) and get: what the error
@@ -8,6 +8,11 @@ means, the likely cause, what to check, a suggested fix, and the documentation i
 was based on — with real retrieval and AI latency shown.
 
 Built for the [YC Fall 2026 x Moss: The Zero Latency Builder Sprint](https://yc-fall-2026-x-moss.devpost.com/).
+
+![ReqBro Assist](docs/reqbro-home.png)
+
+Submission materials: [PRD](PRD.md) · [Architecture](ARCHITECTURE.md) ·
+[Evidence package](SUBMISSION_EVIDENCE.md)
 
 This is a separate project from ReqBro (the Android API client) — it
 reuses the idea of AI-assisted request debugging, rewritten as a standalone web
@@ -69,9 +74,14 @@ uvicorn app.main:app --reload
 Open http://localhost:8000 — click one of the example buttons and hit "Debug
 this."
 
-## Deployment
+## Live deployment
 
-To deploy on [Railway](https://railway.app) (deployment not yet verified):
+The application is deployed as one Railway service in Southeast Asia. Both the
+static interface and FastAPI backend use the same public origin. The production
+health endpoint and a Moss-backed `/api/debug` request were verified on
+September 19, 2026.
+
+To reproduce the deployment on [Railway](https://railway.app):
 
 1. Push this repo to GitHub.
 2. Create a new Railway project from the GitHub repo, root directory `backend`.
@@ -115,9 +125,12 @@ python -m unittest discover -s tests -v
 17 tests cover credential formats, endpoint redaction before both providers,
 validation limits, forged retrieved text, sparse/no-match inputs, source links,
 conflicting abstentions, invalid model JSON and sanitized provider errors.
-Provider requests are mocked: passing tests do not establish live retrieval,
-model quality, injection-proof behavior or actual latency. Real credentials,
-index seeding and an end-to-end deployment test are still required.
+Provider requests are mocked in this suite, so passing tests alone do not
+establish live retrieval or model quality. A separate production verification
+on September 19, 2026 returned five trusted Moss results, one cited supporting
+source, 5.7 ms retrieval, 2,771.2 ms AI generation and 2,777.2 ms total time for
+a synthetic missing-Authorization-header case. These are one observed run, not
+a latency guarantee or benchmark average.
 
 The server requires an error/response signal matching a curated pattern before
 asking the model for a diagnosis. It excludes changed or unknown retrieved text
