@@ -12,7 +12,8 @@ Built for the [YC Fall 2026 x Moss: The Zero Latency Builder Sprint](https://yc-
 ![ReqBro Assist](docs/reqbro-home.png)
 
 Submission materials: [PRD](PRD.md) · [Architecture](ARCHITECTURE.md) ·
-[Evidence package](SUBMISSION_EVIDENCE.md)
+[Evidence package](SUBMISSION_EVIDENCE.md) · [2-minute demo](DEMO_SCRIPT.md) ·
+[Submission copy](SUBMISSION_COPY.md)
 
 This is a separate project from ReqBro (the Android API client) — it
 reuses the idea of AI-assisted request debugging, rewritten as a standalone web
@@ -79,7 +80,7 @@ this."
 The application is deployed as one Railway service in Southeast Asia. Both the
 static interface and FastAPI backend use the same public origin. The production
 health endpoint and a Moss-backed `/api/debug` request were verified on
-September 19, 2026.
+September 20, 2026.
 
 To reproduce the deployment on [Railway](https://railway.app):
 
@@ -127,9 +128,8 @@ validation limits, forged retrieved text, sparse/no-match inputs, source links,
 conflicting abstentions, invalid model JSON and sanitized provider errors.
 Provider requests are mocked in this suite, so passing tests alone do not
 establish live retrieval or model quality. A separate production verification
-on September 19, 2026 returned five trusted Moss results, one cited supporting
-source, 5.7 ms retrieval, 2,771.2 ms AI generation and 2,777.2 ms total time for
-a synthetic missing-Authorization-header case. These are one observed run, not
+on September 20, 2026 returned five trusted Moss results, one cited supporting
+source, 13.9 ms retrieval, 2,431.2 ms AI generation and 2,445.4 ms total time for a reproducible public GitHub missing-Authorization-header case. These are one observed run, not
 a latency guarantee or benchmark average.
 
 The server requires an error/response signal matching a curated pattern before

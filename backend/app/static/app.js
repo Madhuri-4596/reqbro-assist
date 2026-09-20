@@ -1,5 +1,6 @@
 const submitBtn = document.getElementById("submit");
 const resultEl = document.getElementById("result");
+let lastResult = null;
 
 function esc(s) {
   const div = document.createElement("div");
@@ -63,7 +64,13 @@ submitBtn.addEventListener("click", async () => {
 });
 
 function render(data) {
+  lastResult = data;
   let html = `<div class="card">`;
+  const citedCount = data.sources?.filter((s) => s.cited).length || 0;
+  const trustedCount = data.sources?.filter((s) => s.trusted).length || 0;
+  const grounded = !data.needs_more_info && !data.insufficient_evidence && citedCount > 0;
+
+  html += `<div class="verdict"><div><strong>${grounded ? "Evidence-supported diagnosis" : "Conservative abstention"}</strong><small>${grounded ? `${citedCount} supporting citation · ${trustedCount} trusted results` : "ReqBro refused to claim more than the evidence supports"}</small></div><span class="verdict-badge">${grounded ? "GROUNDED" : "ABSTAINED"}</span></div>`;
 
   if (data.needs_more_info) {
     html += `<div class="banner info">
@@ -91,7 +98,6 @@ function render(data) {
   }
 
   if (data.sources?.length) {
-    const citedCount = data.sources.filter((s) => s.cited).length;
     html += `<div class="result-title">${citedCount > 0 ? "Sources" : "Considered (none confidently relevant)"}</div>`;
     data.sources.forEach((s) => {
       html += `<div class="source ${s.cited ? "cited" : ""}">
@@ -112,6 +118,40 @@ function render(data) {
     <div class="cell total"><div class="label">Total</div><div class="value">${data.total_ms}<span style="font-size:11px">ms</span></div></div>
   </div>`;
 
+  html += `<div class="trace" aria-label="Evidence pipeline trace">
+    <div class="trace-row"><b>01 · Redaction</b><span>completed before provider calls</span></div>
+    <div class="trace-row"><b>02 · Moss retrieval</b><span>${data.sources?.length || 0} results · ${data.retrieval_ms}ms</span></div>
+    <div class="trace-row"><b>03 · Evidence gate</b><span>${citedCount ? `${citedCount} source cited` : "diagnosis withheld"}</span></div>
+    <div class="trace-row"><b>04 · OpenAI</b><span>${data.ai_ms ? `${data.ai_ms}ms` : "skipped safely"}</span></div>
+    <div class="trace-row"><b>05 · Retention</b><span>${data.data_retained ? "application storage enabled" : "no application database retention"}</span></div>
+  </div>`;
+
+  html += `<div class="result-actions"><button type="button" data-action="copy">Copy judge summary</button><button type="button" data-action="json">Download evidence JSON</button></div>`;
+
   html += `</div>`;
   resultEl.innerHTML = html;
 }
+
+function judgeSummary(data) {
+  const cited = (data.sources || []).filter((s) => s.cited).map((s) => s.id);
+  return `ReqBro Assist evidence report\n\nMeaning: ${data.meaning}\nLikely cause: ${data.likely_cause}\nSuggested fix: ${data.suggested_fix}\nCited evidence: ${cited.join(", ") || "none — diagnosis abstained"}\nMoss retrieval: ${data.retrieval_ms}ms\nAI: ${data.ai_ms}ms\nTotal: ${data.total_ms}ms\nApplication data retained: ${data.data_retained}`;
+}
+
+resultEl.addEventListener("click", async (event) => {
+  const action = event.target.dataset.action;
+  if (!action || !lastResult) return;
+  if (action === "copy") {
+    await navigator.clipboard.writeText(judgeSummary(lastResult));
+    event.target.textContent = "Copied ✓";
+    setTimeout(() => (event.target.textContent = "Copy judge summary"), 1600);
+  }
+  if (action === "json") {
+    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "reqbro-evidence-report.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+});

@@ -94,7 +94,7 @@ purpose-written knowledge base of 19 documents covering five error
 ## Smallest useful product (what a judge can verify in under a minute)
 
 1. Click one of the five example buttons.
-2. Click "Debug this request."
+2. Click "Analyze with ReqBro Assist."
 3. See: an explanation, a likely cause, what to check, a suggested fix,
    the specific retrieved documents that support the answer (each marked
    "cited" or not), and three separate timing numbers.
@@ -134,16 +134,16 @@ purpose-written knowledge base of 19 documents covering five error
 
 ### Actual measured result
 
-On September 19, 2026, a synthetic `401` request with the explicit signal
+On September 20, 2026, a reproducible public GitHub `401` response with the explicit signal
 `Authorization header is missing` was sent to the public Railway deployment in
 Southeast Asia. The live response returned five trusted Moss results, cited one
 supporting source, and reported:
 
 | Stage | Observed time |
 |---|---:|
-| Moss retrieval | **5.7 ms** |
-| OpenAI generation | **2,771.2 ms** |
-| End to end | **2,777.2 ms** |
+| Moss retrieval | **13.9 ms** |
+| OpenAI generation | **2,431.2 ms** |
+| End to end | **2,445.4 ms** |
 
 This is a single verified production observation, not an average, percentile or
 performance guarantee. Provider conditions, cold starts and input complexity
@@ -181,7 +181,7 @@ verbatim. Request field lengths and method/status values are bounded.
 
 The credential-free regression suite passes 17 tests using provider mocks.
 The 17-test suite still uses provider mocks, but deployed operation was verified
-separately on September 19 with a live Moss retrieval and OpenAI explanation.
+separately on September 20 with a live Moss retrieval and OpenAI explanation.
 That single observation should not be presented as a broad performance study.
 The UI discloses application behavior separately from hosting/provider policies;
 no blanket claim that data is never retained anywhere is made.

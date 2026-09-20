@@ -113,7 +113,7 @@ verbatim. Request field lengths and method/status values are bounded.
 
 The credential-free regression suite passes 17 tests using provider mocks.
 The credential-free suite uses provider mocks. Live deployed operation was
-verified separately on September 19, 2026 with a Moss retrieval and OpenAI
-explanation; the observed 5.7 ms retrieval is one run rather than a benchmark.
+verified separately on September 20, 2026 with a Moss retrieval and OpenAI
+explanation; the observed 13.9 ms retrieval is one run rather than a benchmark.
 The UI discloses application behavior separately from hosting/provider policies;
 no blanket claim that data is never retained anywhere is made.
